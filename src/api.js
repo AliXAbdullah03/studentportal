@@ -1,0 +1,150 @@
+const API_BASE = '/api';
+const TOKEN_KEY = 'auth_token';
+
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+async function request(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(data.error || 'Request failed');
+  }
+  return data;
+}
+
+async function requestForm(path, formData, method = 'POST') {
+  const headers = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, { method, headers, body: formData });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+async function downloadFile(path, filename) {
+  const headers = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, { headers });
+  if (!res.ok) throw new Error('Download failed');
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export const api = {
+  auth: {
+    register: (data) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+    login: (email, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+    me: () => request('/auth/me'),
+  },
+  users: {
+    listStaff: () => request('/users/staff'),
+    listStudents: () => request('/users/students'),
+    createStaff: (data) => request('/users/staff', { method: 'POST', body: JSON.stringify(data) }),
+    updateStaff: (id, data) => request(`/users/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteStaff: (id) => request(`/users/staff/${id}`, { method: 'DELETE' }),
+  },
+  scholarships: {
+    list: (params = {}) => {
+      const query = new URLSearchParams(params).toString();
+      return request(`/scholarships${query ? `?${query}` : ''}`);
+    },
+    get: (id) => request(`/scholarships/${id}`),
+    fields: () => request('/scholarships/fields'),
+    countries: () => request('/scholarships/countries'),
+    adminAll: () => request('/scholarships/admin/all'),
+    create: (data) => request('/scholarships', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id, data) => request(`/scholarships/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id) => request(`/scholarships/${id}`, { method: 'DELETE' }),
+  },
+  applications: {
+    submit: (data) => request('/applications', { method: 'POST', body: JSON.stringify(data) }),
+    mine: () => request('/applications/mine'),
+    list: () => request('/applications'),
+    updateStatus: (id, status) => request(`/applications/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  },
+  match: {
+    calculate: (data) => request('/match', { method: 'POST', body: JSON.stringify(data) }),
+  },
+  guidance: {
+    request: (formData) => requestForm('/guidance/request', formData),
+    list: () => request('/guidance'),
+    downloadDossier: (id) => downloadFile(`/guidance/${id}/dossier`, `dossier-${id}.pdf`),
+    updateStatus: (id, status) => request(`/guidance/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  },
+  plans: {
+    list: () => request('/plans'),
+    adminAll: () => request('/plans/admin/all'),
+    create: (data) => request('/plans', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id, data) => request(`/plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id) => request(`/plans/${id}`, { method: 'DELETE' }),
+  },
+  orders: {
+    create: (plan_id) => request('/orders', { method: 'POST', body: JSON.stringify({ plan_id }) }),
+    pay: (id, data) => request(`/orders/${id}/pay`, { method: 'POST', body: JSON.stringify(data) }),
+    mine: () => request('/orders/mine'),
+    list: () => request('/orders'),
+    updateStatus: (id, payment_status) => request(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ payment_status }) }),
+  },
+  messages: {
+    send: (data) => request('/messages/send', { method: 'POST', body: JSON.stringify(data) }),
+    list: () => request('/messages'),
+  },
+  crm: {
+    overview: () => request('/crm/overview'),
+    traffic: () => request('/crm/traffic'),
+    assignments: () => request('/crm/assignments'),
+    getAssignment: (id) => request(`/crm/assignments/${id}`),
+    createAssignment: (data) => request('/crm/assignments', { method: 'POST', body: JSON.stringify(data) }),
+    forward: (id) => request(`/crm/assignments/${id}/forward`, { method: 'POST' }),
+    assign: (id, consultant_id) => request(`/crm/assignments/${id}/assign`, { method: 'POST', body: JSON.stringify({ consultant_id }) }),
+    toggleMilestone: (id, is_completed) => request(`/crm/milestones/${id}`, { method: 'PATCH', body: JSON.stringify({ is_completed }) }),
+    consultantCapacity: () => request('/crm/consultants/capacity'),
+    myStatus: () => request('/crm/my-status'),
+  },
+  mentorship: {
+    submit: (data) => request('/mentorship', { method: 'POST', body: JSON.stringify(data) }),
+    list: () => request('/mentorship'),
+    updateStatus: (id, status) => request(`/mentorship/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  },
+};
+
+export function setAuthToken(token) {
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
+}
+
+export function isAuthenticated() {
+  return !!getToken();
+}
+
+export function getDashboardPath(role) {
+  switch (role) {
+    case 'admin': return '/admin';
+    case 'manager': return '/manager';
+    case 'consultant': return '/consultant';
+    case 'student': return '/dashboard';
+    default: return '/';
+  }
+}
+
+export function formatPrice(cents) {
+  if (cents === 0) return 'Free';
+  return `$${(cents / 100).toFixed(2)}`;
+}
