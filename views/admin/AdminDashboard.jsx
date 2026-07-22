@@ -4,14 +4,55 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from '@/lib/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
+import DashboardShell from '@/components/DashboardShell';
 import AdminCommandCenter from '@/components/admin/AdminCommandCenter';
 import AdminStaffHR from '@/components/admin/AdminStaffHR';
 import AdminSalesPanel from '@/components/admin/AdminSalesPanel';
 import AdminGuidancePanel from '@/components/admin/AdminGuidancePanel';
 import SharedApplicationsBoard from '@/components/SharedApplicationsBoard';
 
+const NAV_GROUPS = [
+  {
+    title: 'Operations',
+    items: [
+      { id: 'board', label: 'Applications Board', icon: 'board' },
+      { id: 'applications', label: 'Applications List', icon: 'list' },
+      { id: 'command', label: 'Command Center', icon: 'command' },
+    ],
+  },
+  {
+    title: 'Catalog',
+    items: [
+      { id: 'scholarships', label: 'Scholarships', icon: 'book' },
+    ],
+  },
+  {
+    title: 'Services',
+    items: [
+      { id: 'mentorship', label: 'Guidance', icon: 'guidance' },
+      { id: 'sales', label: 'Sales & Payments', icon: 'sales' },
+    ],
+  },
+  {
+    title: 'Organization',
+    items: [
+      { id: 'hr', label: 'HR Management', icon: 'hr' },
+    ],
+  },
+];
+
+const TAB_META = {
+  board: { title: 'Applications Board', subtitle: 'Shared live board for Admin, Manager & Consultant' },
+  command: { title: 'Command Center', subtitle: 'Pipeline overview, KPIs, and client forwarding' },
+  scholarships: { title: 'Scholarships', subtitle: 'Create, edit, and manage catalog listings' },
+  applications: { title: 'Applications List', subtitle: 'Review submissions and update status' },
+  mentorship: { title: 'Guidance', subtitle: 'Requests, match dossiers, and follow-ups' },
+  sales: { title: 'Sales & Payments', subtitle: 'Plans, orders, and monetization' },
+  hr: { title: 'HR Management', subtitle: 'Managers and admissions consultants' },
+};
+
 export default function AdminDashboard() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState('board');
   const [scholarships, setScholarships] = useState([]);
@@ -44,180 +85,127 @@ export default function AdminDashboard() {
     fetchData();
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const tabs = [
-    { id: 'board', label: 'Applications Board', count: applications.length },
-    { id: 'command', label: 'Command Center', count: null },
-    { id: 'scholarships', label: 'Scholarships', count: scholarships.length },
-    { id: 'applications', label: 'Applications List', count: applications.length },
-    { id: 'mentorship', label: 'Guidance', count: mentorship.length },
-    { id: 'sales', label: 'Sales & Payments', count: null },
-    { id: 'hr', label: 'HR Management', count: null },
-  ];
+  const meta = TAB_META[tab] || { title: 'Admin', subtitle: '' };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Admin Command Center</h1>
-            <p className="text-sm text-gray-500">Welcome, {user?.name}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link to="/" className="btn-secondary text-sm">View Site</Link>
-            <button type="button" onClick={handleLogout} className="btn-secondary text-sm">Logout</button>
-          </div>
-        </div>
-      </header>
+    <DashboardShell
+      storageKey="admin_sidebar_open"
+      brandTitle="Admin Settings"
+      roleLabel="Admin"
+      navGroups={NAV_GROUPS}
+      activeTab={tab}
+      onTabChange={setTab}
+      counts={{
+        board: applications.length,
+        applications: applications.length,
+        scholarships: scholarships.length,
+        mentorship: mentorship.length,
+      }}
+      title={meta.title}
+      subtitle={meta.subtitle}
+      onLogout={() => { logout(); navigate('/login'); }}
+      headerActions={tab === 'scholarships' ? (
+        <Link to="/admin/scholarships/new" className="btn-primary shrink-0 text-sm">Add Scholarship</Link>
+      ) : null}
+    >
+      {tab === 'board' && <SharedApplicationsBoard title="Shared Applications Board" />}
+      {tab === 'command' && <AdminCommandCenter onRefresh={fetchData} />}
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Stats */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={`card p-5 text-left transition ${tab === t.id ? 'ring-2 ring-brand-600' : ''}`}
-            >
-              {t.count !== null && <p className="text-3xl font-bold text-brand-700">{t.count}</p>}
-              <p className={`text-sm text-gray-600 ${t.count === null ? 'text-base font-semibold text-gray-900' : ''}`}>{t.label}</p>
-            </button>
-          ))}
-        </div>
-
-        {tab === 'board' && (
-          <SharedApplicationsBoard title="Shared Applications Board" />
-        )}
-
-        {/* Command Center */}
-        {tab === 'command' && (
-          <AdminCommandCenter onRefresh={fetchData} />
-        )}
-
-        {/* Scholarships Tab */}
-        {tab === 'scholarships' && (
-          <div>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Manage Scholarships</h2>
-              <Link to="/admin/scholarships/new" className="btn-primary text-sm">Add Scholarship</Link>
+      {tab === 'scholarships' && (
+        <div>
+          {loading ? (
+            <p className="text-slate-500">Loading...</p>
+          ) : scholarships.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
+              No scholarships yet. Add your first one!
             </div>
-
-            {loading ? (
-              <p className="text-gray-500">Loading...</p>
-            ) : scholarships.length === 0 ? (
-              <div className="card p-8 text-center text-gray-500">No scholarships yet. Add your first one!</div>
-            ) : (
-              <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                  <thead className="bg-gray-50">
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200 text-sm">
+                  <thead className="bg-slate-50">
                     <tr>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500">Title</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500">University</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500">Country</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500">Status</th>
-                      <th className="px-4 py-3 text-right font-medium text-gray-500">Actions</th>
+                      <th className="px-4 py-3 text-left font-medium text-slate-500">Title</th>
+                      <th className="px-4 py-3 text-left font-medium text-slate-500">University</th>
+                      <th className="px-4 py-3 text-left font-medium text-slate-500">Country</th>
+                      <th className="px-4 py-3 text-left font-medium text-slate-500">Status</th>
+                      <th className="px-4 py-3 text-right font-medium text-slate-500">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-slate-100">
                     {scholarships.map((s) => (
-                      <tr key={s.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-medium text-gray-900">{s.title}</td>
-                        <td className="px-4 py-3 text-gray-600">{s.university}</td>
-                        <td className="px-4 py-3 text-gray-600">{s.country}</td>
+                      <tr key={s.id} className="hover:bg-slate-50/80">
+                        <td className="px-4 py-3 font-medium text-slate-900">{s.title}</td>
+                        <td className="px-4 py-3 text-slate-600">{s.university}</td>
+                        <td className="px-4 py-3 text-slate-600">{s.country}</td>
                         <td className="px-4 py-3">
                           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                            s.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {s.status}
-                          </span>
+                            s.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'
+                          }`}>{s.status}</span>
                         </td>
-                        <td className="px-4 py-3 text-right space-x-2">
-                          <Link to={`/admin/scholarships/${s.id}/edit`} className="text-brand-600 hover:text-brand-700 font-medium">
-                            Edit
-                          </Link>
-                          <button type="button" onClick={() => handleDelete(s.id)} className="text-red-600 hover:text-red-700 font-medium">
-                            Delete
-                          </button>
+                        <td className="space-x-3 px-4 py-3 text-right">
+                          <Link to={`/admin/scholarships/${s.id}/edit`} className="font-medium text-brand-600 hover:text-brand-700">Edit</Link>
+                          <button type="button" onClick={() => handleDelete(s.id)} className="font-medium text-red-600 hover:text-red-700">Delete</button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
+      )}
 
-        {/* Applications Tab */}
-        {tab === 'applications' && (
-          <div>
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Scholarship Applications</h2>
-            {loading ? (
-              <p className="text-gray-500">Loading...</p>
-            ) : applications.length === 0 ? (
-              <div className="card p-8 text-center text-gray-500">No applications yet.</div>
-            ) : (
-              <div className="space-y-4">
-                {applications.map((a) => (
-                  <div key={a.id} className="card p-5">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{a.full_name}</h3>
-                        <p className="text-sm text-gray-600">{a.email} &middot; {a.nationality}</p>
-                        <p className="mt-1 text-sm text-brand-600">{a.scholarship_title} — {a.university}</p>
-                        {a.message && <p className="mt-2 text-sm text-gray-500">{a.message}</p>}
-                      </div>
-                      <select
-                        value={a.status}
-                        onChange={async (e) => {
-                          await api.applications.updateStatus(a.id, e.target.value);
-                          fetchData();
-                        }}
-                        className="input-field w-auto text-sm"
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="reviewed">Reviewed</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="rejected">Rejected</option>
-                      </select>
+      {tab === 'applications' && (
+        <div>
+          {loading ? (
+            <p className="text-slate-500">Loading...</p>
+          ) : applications.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">No applications yet.</div>
+          ) : (
+            <div className="space-y-3">
+              {applications.map((a) => (
+                <div key={a.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <h3 className="font-semibold text-slate-900">{a.full_name}</h3>
+                      <p className="text-sm text-slate-600">{a.email} · {a.nationality}</p>
+                      <p className="mt-1 text-sm text-brand-600">{a.scholarship_title} — {a.university}</p>
+                      {a.message && <p className="mt-2 text-sm text-slate-500">{a.message}</p>}
                     </div>
+                    <select
+                      value={a.status}
+                      onChange={async (e) => {
+                        await api.applications.updateStatus(a.id, e.target.value);
+                        fetchData();
+                      }}
+                      className="input-field w-auto text-sm"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="reviewed">Reviewed</option>
+                      <option value="in_progress">In progress</option>
+                      <option value="accepted">Accepted</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-        {/* Guidance Tab */}
-        {tab === 'mentorship' && (
-          <div>
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Guidance Requests &amp; Dossiers</h2>
-            <AdminGuidancePanel requests={mentorship} loading={loading} onRefresh={fetchData} />
-          </div>
-        )}
-
-        {/* Sales Tab */}
-        {tab === 'sales' && (
-          <div>
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Sales &amp; Monetization</h2>
-            <AdminSalesPanel />
-          </div>
-        )}
-
-        {/* HR Tab */}
-        {tab === 'hr' && (
-          <div>
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Human Resources</h2>
-            <p className="mb-4 text-sm text-gray-600">Add, edit, and remove Managers and Admissions Consultants.</p>
-            <AdminStaffHR />
-          </div>
-        )}
-      </div>
-    </div>
+      {tab === 'mentorship' && (
+        <AdminGuidancePanel requests={mentorship} loading={loading} onRefresh={fetchData} />
+      )}
+      {tab === 'sales' && <AdminSalesPanel />}
+      {tab === 'hr' && (
+        <div>
+          <p className="mb-4 text-sm text-slate-600">Add, edit, and remove Managers and Admissions Consultants.</p>
+          <AdminStaffHR />
+        </div>
+      )}
+    </DashboardShell>
   );
 }

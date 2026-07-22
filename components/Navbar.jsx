@@ -24,13 +24,13 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link to="/" className="flex shrink-0 items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded bg-[#1a3a5c] text-sm font-bold text-white">
-            GS
+              <div className="flex h-9 w-9 items-center justify-center rounded bg-[#1a3a5c] text-sm font-bold text-white">
+            SC
           </div>
           <div className="leading-tight">
-            <span className="text-base font-bold text-[#1a3a5c] sm:text-lg">PhD Scholarships Hub</span>
+            <span className="text-base font-bold text-[#1a3a5c] sm:text-lg">Scholaris</span>
             <span className="hidden text-[10px] font-medium uppercase tracking-wide text-[#e85d04] sm:block">
-              Doctoral Funding
+              Global Postgraduate Mobility
             </span>
           </div>
         </Link>

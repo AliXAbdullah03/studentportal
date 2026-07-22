@@ -183,15 +183,15 @@ export default function AuthModal() {
         <div className="flex flex-1 flex-col px-6 py-8 sm:px-10">
           <div className="mb-5 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded bg-[#1a3a5c] text-xs font-bold text-white">
-              GS
+              SC
             </div>
-            <span className="text-sm font-semibold text-[#1a3a5c]">PhD Scholarships Hub</span>
+            <span className="text-sm font-semibold text-[#1a3a5c]">Scholaris</span>
           </div>
 
           {authModalMode === 'choice' && (
             <>
               <h3 className="text-xl font-bold leading-snug text-[#1a3a5c] sm:text-2xl">
-                Join students who use PhD Scholarships Hub to find funded doctoral programs
+                Join students who use Scholaris to find funded programs and guided applications
               </h3>
               <p className="mt-2 text-sm text-gray-500">Get free access to our scholarship catalog!</p>
 
@@ -403,7 +403,8 @@ export default function AuthModal() {
           )}
 
           <p className="mt-auto pt-6 text-center text-[11px] leading-relaxed text-gray-400">
-            By registering, you agree to our Privacy Statement and Terms and Conditions.
+            By registering, you agree to our{' '}
+            <a href="/policies" className="font-semibold text-[#1a3a5c] underline">Policies &amp; Guidelines</a>.
           </p>
         </div>
       </div>

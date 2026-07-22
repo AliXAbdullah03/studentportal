@@ -3,7 +3,24 @@
 import { useEffect, useState } from 'react';
 import { api, formatPrice } from '@/lib/api';
 
-const EMPTY_PLAN = { slug: '', name: '', description: '', price_cents: 0, features: '', active: true };
+const EMPTY_PLAN = {
+  slug: '',
+  name: '',
+  description: '',
+  price_cents: '',
+  features: '',
+  active: true,
+  category: 'research',
+  plan_type: '',
+  difficulty: '',
+  currency: 'PKR',
+  payment_type: 'retainer',
+  milestone_1_cents: '',
+  milestone_2_cents: '',
+  payment_note: '',
+  internal_split: '',
+  sort_order: 0,
+};
 
 export default function AdminSalesPanel() {
   const [tab, setTab] = useState('orders');
@@ -31,9 +48,13 @@ export default function AdminSalesPanel() {
 
   const handlePlanSubmit = async (e) => {
     e.preventDefault();
+    const toCents = (v) => (v === '' || v == null ? null : Math.round(parseFloat(v) * 100) || 0);
     const data = {
       ...planForm,
       price_cents: Math.round(parseFloat(planForm.price_cents) * 100) || 0,
+      milestone_1_cents: toCents(planForm.milestone_1_cents),
+      milestone_2_cents: toCents(planForm.milestone_2_cents),
+      sort_order: Number(planForm.sort_order) || 0,
       features: planForm.features.split('\n').filter(Boolean),
     };
     if (editingPlanId) {
@@ -53,9 +74,19 @@ export default function AdminSalesPanel() {
       slug: plan.slug,
       name: plan.name,
       description: plan.description || '',
-      price_cents: (plan.price_cents / 100).toFixed(2),
+      price_cents: ((plan.price_cents || 0) / 100).toFixed(0),
       features: (plan.features || []).join('\n'),
       active: plan.active,
+      category: plan.category || 'other',
+      plan_type: plan.plan_type || '',
+      difficulty: plan.difficulty || '',
+      currency: plan.currency || 'PKR',
+      payment_type: plan.payment_type || 'retainer',
+      milestone_1_cents: plan.milestone_1_cents != null ? String(plan.milestone_1_cents / 100) : '',
+      milestone_2_cents: plan.milestone_2_cents != null ? String(plan.milestone_2_cents / 100) : '',
+      payment_note: plan.payment_note || '',
+      internal_split: plan.internal_split || '',
+      sort_order: plan.sort_order || 0,
     });
     setShowPlanForm(true);
   };
@@ -144,8 +175,27 @@ export default function AdminSalesPanel() {
                   <input required value={planForm.name} onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })} className="input-field" />
                 </div>
                 <div>
-                  <label className="label-field">Price (USD)</label>
-                  <input type="number" step="0.01" min="0" value={planForm.price_cents} onChange={(e) => setPlanForm({ ...planForm, price_cents: e.target.value })} className="input-field" />
+                  <label className="label-field">Price (PKR)</label>
+                  <input type="number" step="1" min="0" value={planForm.price_cents} onChange={(e) => setPlanForm({ ...planForm, price_cents: e.target.value })} className="input-field" />
+                </div>
+                <div>
+                  <label className="label-field">Category</label>
+                  <select value={planForm.category} onChange={(e) => setPlanForm({ ...planForm, category: e.target.value })} className="input-field">
+                    <option value="research">Research / PhD</option>
+                    <option value="private">Private University</option>
+                    <option value="government">Government</option>
+                    <option value="undergraduate">Undergraduate</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label-field">Payment Type</label>
+                  <select value={planForm.payment_type} onChange={(e) => setPlanForm({ ...planForm, payment_type: e.target.value })} className="input-field">
+                    <option value="upfront">Upfront</option>
+                    <option value="milestone">Milestone</option>
+                    <option value="retainer">Retainer 60/40</option>
+                    <option value="free">Free</option>
+                  </select>
                 </div>
                 <div>
                   <label className="label-field">Active</label>
@@ -154,6 +204,36 @@ export default function AdminSalesPanel() {
                     <option value="0">Inactive</option>
                   </select>
                 </div>
+                <div>
+                  <label className="label-field">Plan Type Label</label>
+                  <input value={planForm.plan_type} onChange={(e) => setPlanForm({ ...planForm, plan_type: e.target.value })} className="input-field" placeholder="e.g. Tier 3 / Bespoke" />
+                </div>
+                <div>
+                  <label className="label-field">Difficulty</label>
+                  <select value={planForm.difficulty} onChange={(e) => setPlanForm({ ...planForm, difficulty: e.target.value })} className="input-field">
+                    <option value="">—</option>
+                    <option value="low">Low</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="high">High</option>
+                    <option value="mixed">Mixed</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label-field">Milestone 1 (PKR)</label>
+                  <input type="number" value={planForm.milestone_1_cents} onChange={(e) => setPlanForm({ ...planForm, milestone_1_cents: e.target.value })} className="input-field" />
+                </div>
+                <div>
+                  <label className="label-field">Milestone 2 (PKR)</label>
+                  <input type="number" value={planForm.milestone_2_cents} onChange={(e) => setPlanForm({ ...planForm, milestone_2_cents: e.target.value })} className="input-field" />
+                </div>
+              </div>
+              <div>
+                <label className="label-field">Payment Note</label>
+                <input value={planForm.payment_note} onChange={(e) => setPlanForm({ ...planForm, payment_note: e.target.value })} className="input-field" />
+              </div>
+              <div>
+                <label className="label-field">Internal Split (admin only)</label>
+                <input value={planForm.internal_split} onChange={(e) => setPlanForm({ ...planForm, internal_split: e.target.value })} className="input-field" />
               </div>
               <div>
                 <label className="label-field">Description</label>
@@ -172,12 +252,20 @@ export default function AdminSalesPanel() {
 
           <div className="space-y-3">
             {plans.map((p) => (
-              <div key={p.id} className="card flex items-center justify-between p-4">
+              <div key={p.id} className="card flex items-center justify-between gap-4 p-4">
                 <div>
-                  <p className="font-semibold text-gray-900">{p.name} <span className="text-brand-600">{formatPrice(p.price_cents)}</span></p>
-                  <p className="text-sm text-gray-500">{p.slug} · {p.active ? 'Active' : 'Inactive'}</p>
+                  <p className="font-semibold text-gray-900">
+                    {p.name}{' '}
+                    <span className="text-brand-600">{formatPrice(p.price_cents, p.currency)}</span>
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {p.category} · {p.slug} · {p.payment_type} · {p.active ? 'Active' : 'Inactive'}
+                  </p>
+                  {p.internal_split && (
+                    <p className="mt-1 text-xs text-amber-700">Split: {p.internal_split}</p>
+                  )}
                 </div>
-                <button type="button" onClick={() => openEditPlan(p)} className="text-sm font-medium text-brand-600">Edit</button>
+                <button type="button" onClick={() => openEditPlan(p)} className="shrink-0 text-sm font-medium text-brand-600">Edit</button>
               </div>
             ))}
           </div>

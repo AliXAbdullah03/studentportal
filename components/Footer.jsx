@@ -10,13 +10,12 @@ export default function Footer() {
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-white font-bold text-sm">
-                GS
+                SC
               </div>
-              <span className="text-lg font-bold text-white">Global Scholarships Hub</span>
+              <span className="text-lg font-bold text-white">Scholaris</span>
             </div>
             <p className="text-sm text-gray-400 max-w-md">
-              Your comprehensive resource for international scholarships, grants, and expert mentorship
-              to help you achieve your study abroad dreams.
+              Scholarship consultancy &amp; postgraduate placement — research, private university, government funding, and undergraduate admissions.
             </p>
           </div>
 
@@ -25,7 +24,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li><Link to="/scholarships" className="hover:text-white transition">Scholarships</Link></li>
               <li><Link to="/mentorship" className="hover:text-white transition">Mentorship</Link></li>
-              <li><Link to="/guidance" className="hover:text-white transition">Guidance Center</Link></li>
+              <li><Link to="/plans" className="hover:text-white transition">Service Plans</Link></li>
               <li><Link to="/about" className="hover:text-white transition">About Us</Link></li>
             </ul>
           </div>
@@ -33,15 +32,16 @@ export default function Footer() {
           <div>
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-white">Support</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="mailto:contact@globalscholarships.com" className="hover:text-white transition">Contact Us</a></li>
+              <li><a href="mailto:contact@scholaris.com" className="hover:text-white transition">Contact Us</a></li>
+              <li><Link to="/policies" className="hover:text-white transition">Policies</Link></li>
               <li><Link to="/mentorship" className="hover:text-white transition">Book Consultation</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="mt-10 border-t border-brand-900 pt-6 text-center text-xs text-gray-500">
-          <p>Providing information about international financial aid &amp; scholarships since 2026</p>
-          <p className="mt-1">&copy; {new Date().getFullYear()} Global Scholarships Hub. All rights reserved.</p>
+          <p>Global Postgraduate Mobility &amp; Scholarship Consultancy</p>
+          <p className="mt-1">&copy; {new Date().getFullYear()} Scholaris. All rights reserved.</p>
         </div>
       </div>
     </footer>

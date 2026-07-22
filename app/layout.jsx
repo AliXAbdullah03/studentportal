@@ -4,10 +4,10 @@ import AppLayout from '@/components/AppLayout';
 
 export const metadata = {
   title: {
-    default: 'Global PhD Scholarships Hub',
-    template: '%s | Global PhD Scholarships Hub',
+    default: 'Scholaris — Scholarship Consultancy',
+    template: '%s | Scholaris',
   },
-  description: 'Discover 1,000+ fully funded PhD scholarships worldwide. Test your match percentage before signup and get expert guidance.',
+  description: 'Scholaris: global postgraduate mobility, research scholarships, private & government funding, and undergraduate admissions consultancy.',
 };
 
 export default function RootLayout({ children }) {

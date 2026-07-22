@@ -18,14 +18,13 @@ export default function About() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="prose prose-lg max-w-none text-gray-600">
             <p>
-              Global Scholarships Hub is an online scholarship database for students from any country.
-              We have scoured all corners of the globe to locate awards designed to assist students who
-              wish to study in another country — so no matter who you are, we will have an award for you.
+              Scholaris is a scholarship consultancy and postgraduate placement firm focused on global
+              mobility — research scholarships, private university funding, government full-funding schemes,
+              and undergraduate admission placement.
             </p>
             <p className="mt-4">
-              Our platform combines a comprehensive scholarship finder with expert mentorship consultancy.
-              Whether you need help finding the right scholarships or guidance through the application
-              process, our team is here to support you every step of the way.
+              Our platform combines a scholarship finder with end-to-end advisory: document preparation,
+              portal execution, and milestone tracking under the official 2026–27 Scholaris fee structure.
             </p>
           </div>
 

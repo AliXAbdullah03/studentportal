@@ -12,16 +12,25 @@ export default function Checkout() {
   const [plan, setPlan] = useState(null);
   const [order, setOrder] = useState(null);
   const [card, setCard] = useState({ number: '', expiry: '', cvc: '' });
+  const [accepted, setAccepted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  const currency = plan?.currency || 'PKR';
+  const chargeNow = (() => {
+    if (!plan) return 0;
+    if (plan.payment_type === 'milestone' && plan.milestone_1_cents != null) return plan.milestone_1_cents;
+    if (plan.payment_type === 'retainer') return Math.round((plan.price_cents || 0) * 0.6);
+    return plan.price_cents ?? 0;
+  })();
+
   useEffect(() => {
     if (!isStudent) return;
     api.plans.list()
       .then((plans) => {
-        const p = plans.find((x) => x.id === parseInt(planId));
+        const p = plans.find((x) => String(x.id) === String(planId));
         if (!p) throw new Error('Plan not found');
         setPlan(p);
         return api.orders.create(p.id);
@@ -34,14 +43,18 @@ export default function Checkout() {
   const handlePay = async (e) => {
     e.preventDefault();
     if (!order) return;
+    if (!accepted) {
+      setError('Please accept the Scholaris policies before continuing.');
+      return;
+    }
     setPaying(true);
     setError('');
     try {
-      if (plan.price_cents > 0 && (!card.number || !card.expiry || !card.cvc)) {
+      if (chargeNow > 0 && (!card.number || !card.expiry || !card.cvc)) {
         throw new Error('Please fill in payment details');
       }
       await api.orders.pay(order.id, {
-        payment_method: plan.price_cents === 0 ? 'free' : 'card',
+        payment_method: chargeNow === 0 ? 'free' : 'card',
         card_last4: card.number.slice(-4),
       });
       setSuccess(true);
@@ -68,9 +81,9 @@ export default function Checkout() {
       <div className="mx-auto max-w-lg px-4 py-16">
         <div className="card p-8 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-2xl text-green-600">&#10003;</div>
-          <h2 className="mt-4 text-2xl font-bold text-gray-900">Payment Successful</h2>
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">Payment Recorded</h2>
           <p className="mt-2 text-gray-600">
-            You&apos;ve purchased <strong>{plan.name}</strong>. An advisor will contact you shortly.
+            You&apos;ve registered for <strong>{plan.name}</strong>. A Scholaris advisor will contact you shortly.
           </p>
           <Link to="/dashboard" className="btn-primary mt-6 inline-flex">Go to Dashboard</Link>
         </div>
@@ -86,13 +99,28 @@ export default function Checkout() {
       {error && <div className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
       <div className="card mt-6 p-6">
-        <h2 className="font-semibold text-gray-900">{plan?.name}</h2>
-        <p className="mt-1 text-2xl font-bold text-brand-600">{formatPrice(plan?.price_cents)}</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">{plan?.category}</p>
+        <h2 className="mt-1 font-semibold text-gray-900">{plan?.name}</h2>
+        <p className="mt-1 text-2xl font-bold text-brand-600">{formatPrice(plan?.price_cents, currency)}</p>
+        {plan?.payment_note && <p className="mt-2 text-sm text-gray-600">{plan.payment_note}</p>}
+        {plan?.payment_type === 'milestone' && (
+          <p className="mt-2 rounded-md bg-brand-50 px-3 py-2 text-sm text-brand-800">
+            Charging Milestone 1 now: <strong>{formatPrice(chargeNow, currency)}</strong>
+            {plan.milestone_2_cents != null && (
+              <> · Milestone 2 ({formatPrice(plan.milestone_2_cents, currency)}) due at interview phase</>
+            )}
+          </p>
+        )}
+        {plan?.payment_type === 'retainer' && (
+          <p className="mt-2 rounded-md bg-brand-50 px-3 py-2 text-sm text-brand-800">
+            Retainer: charging 60% advance now ({formatPrice(chargeNow, currency)}) · 40% before first portal submission
+          </p>
+        )}
         <p className="mt-2 text-sm text-gray-600">{plan?.description}</p>
       </div>
 
       <form onSubmit={handlePay} className="card mt-6 space-y-4 p-6">
-        {plan?.price_cents > 0 ? (
+        {chargeNow > 0 ? (
           <>
             <h3 className="font-semibold text-gray-900">Payment Details</h3>
             <p className="text-xs text-gray-500">Demo checkout — no real charges. Use any card number.</p>
@@ -120,8 +148,16 @@ export default function Checkout() {
           <p className="text-sm text-gray-600">This plan is free — click below to confirm.</p>
         )}
 
+        <label className="flex items-start gap-2 text-sm text-gray-600">
+          <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-1" />
+          <span>
+            I understand fees are non-refundable once a phase starts, outcomes are not guaranteed, and I am responsible for LORs and prerequisite tests.{' '}
+            <Link to="/policies" className="font-semibold text-brand-600">Policies</Link>
+          </span>
+        </label>
+
         <button type="submit" disabled={paying} className="btn-primary w-full disabled:opacity-50">
-          {paying ? 'Processing...' : plan?.price_cents === 0 ? 'Confirm Free Plan' : `Pay ${formatPrice(plan?.price_cents)}`}
+          {paying ? 'Processing...' : chargeNow === 0 ? 'Confirm Free Plan' : `Pay ${formatPrice(chargeNow, currency)}`}
         </button>
       </form>
     </div>
