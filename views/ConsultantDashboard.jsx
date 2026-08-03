@@ -3,9 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@/lib/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { api } from '@/lib/api';
+import { api, formatPrice } from '@/lib/api';
 import DashboardShell from '@/components/DashboardShell';
 import SharedApplicationsBoard from '@/components/SharedApplicationsBoard';
+import AvailabilityEditor from '@/components/consultant/AvailabilityEditor';
+import ConsultantCalendar from '@/components/consultant/ConsultantCalendar';
+import SessionStudio from '@/components/consultant/SessionStudio';
+import EarningsPanel from '@/components/consultant/EarningsPanel';
 
 const NAV_GROUPS = [
   {
@@ -16,12 +20,30 @@ const NAV_GROUPS = [
       { id: 'completed', label: 'Completed', icon: 'progress' },
     ],
   },
+  {
+    title: 'Schedule & studio',
+    items: [
+      { id: 'calendar', label: 'Calendar', icon: 'calendar' },
+      { id: 'availability', label: 'Availability', icon: 'clock' },
+      { id: 'studio', label: 'Sessions / Studio', icon: 'video' },
+    ],
+  },
+  {
+    title: 'Finance',
+    items: [
+      { id: 'earnings', label: 'Earnings', icon: 'sales' },
+    ],
+  },
 ];
 
 const TAB_META = {
   board: { title: 'Applications Board', subtitle: 'Shared live board — changes sync with Admin & Manager' },
   clients: { title: 'My Clients', subtitle: 'Assigned clients and milestone tracking' },
   completed: { title: 'Completed', subtitle: 'Finished client engagements' },
+  calendar: { title: 'Calendar', subtitle: 'Week view — book and manage consultation sessions' },
+  availability: { title: 'Availability', subtitle: 'Weekly hours and blocked dates' },
+  studio: { title: 'Sessions / Studio', subtitle: 'Built-in Jitsi video room and session notes' },
+  earnings: { title: 'Earnings', subtitle: 'Ledger, available balance, and payout requests' },
 };
 
 export default function ConsultantDashboard() {
@@ -29,9 +51,12 @@ export default function ConsultantDashboard() {
   const navigate = useNavigate();
   const [tab, setTab] = useState('board');
   const [assignments, setAssignments] = useState([]);
+  const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
   const [toggling, setToggling] = useState(null);
+  const [studioSessionId, setStudioSessionId] = useState(null);
+  const [bookAssignmentId, setBookAssignmentId] = useState('');
 
   const fetchAssignments = () => {
     setLoading(true);
@@ -41,7 +66,14 @@ export default function ConsultantDashboard() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchAssignments(); }, []);
+  const fetchOverview = () => {
+    api.consultant.overview().then(setOverview).catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchAssignments();
+    fetchOverview();
+  }, []);
 
   const handleToggleMilestone = async (milestoneId, current) => {
     setToggling(milestoneId);
@@ -49,11 +81,22 @@ export default function ConsultantDashboard() {
       const updated = await api.crm.toggleMilestone(milestoneId, !current);
       setAssignments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
       if (expanded === updated.id) setExpanded(updated.id);
+      fetchOverview();
     } catch (err) {
       alert(err.message);
     } finally {
       setToggling(null);
     }
+  };
+
+  const openStudio = (sessionId) => {
+    setStudioSessionId(sessionId || null);
+    setTab('studio');
+  };
+
+  const bookForClient = (assignmentId) => {
+    setBookAssignmentId(assignmentId);
+    setTab('calendar');
   };
 
   const active = assignments.filter((a) => ['assigned', 'in_progress'].includes(a.status));
@@ -67,15 +110,44 @@ export default function ConsultantDashboard() {
       roleLabel="Consultant"
       navGroups={NAV_GROUPS}
       activeTab={tab}
-      onTabChange={setTab}
+      onTabChange={(id) => {
+        setTab(id);
+        if (id !== 'studio') setStudioSessionId(null);
+        if (id !== 'calendar') setBookAssignmentId('');
+      }}
       counts={{
         clients: active.length,
         completed: completed.length,
+        studio: overview?.upcoming_sessions || 0,
       }}
       title={meta.title}
       subtitle={meta.subtitle}
       onLogout={() => { logout(); navigate('/login'); }}
     >
+      <div className="mb-6 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Next session</p>
+          {overview?.next_session ? (
+            <button type="button" onClick={() => openStudio(overview.next_session.id)} className="mt-1 text-left">
+              <p className="font-semibold text-slate-900 line-clamp-1">{overview.next_session.title}</p>
+              <p className="text-xs text-brand-700">{new Date(overview.next_session.starts_at).toLocaleString()}</p>
+            </button>
+          ) : (
+            <p className="mt-1 text-sm text-slate-500">None scheduled</p>
+          )}
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Open clients</p>
+          <p className="mt-1 text-2xl font-bold text-brand-700">{overview?.open_clients ?? active.length}</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Available balance</p>
+          <button type="button" onClick={() => setTab('earnings')} className="mt-1 text-left">
+            <p className="text-2xl font-bold text-brand-700">{formatPrice(overview?.available_cents || 0)}</p>
+          </button>
+        </div>
+      </div>
+
       {tab === 'board' && <SharedApplicationsBoard title="Shared Applications Board" />}
 
       {tab === 'clients' && (
@@ -128,6 +200,11 @@ export default function ConsultantDashboard() {
 
                   {expanded === client.id && (
                     <div className="border-t border-slate-200 bg-slate-50 p-5">
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        <button type="button" className="btn-primary text-xs" onClick={() => bookForClient(client.id)}>
+                          Book session
+                        </button>
+                      </div>
                       <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
                         Internal Progress Tracker
                       </h3>
@@ -185,6 +262,25 @@ export default function ConsultantDashboard() {
           )}
         </div>
       )}
+
+      {tab === 'calendar' && (
+        <ConsultantCalendar
+          clients={active}
+          initialAssignmentId={bookAssignmentId}
+          onOpenSession={openStudio}
+        />
+      )}
+
+      {tab === 'availability' && <AvailabilityEditor />}
+
+      {tab === 'studio' && (
+        <SessionStudio
+          sessionId={studioSessionId}
+          onChanged={fetchOverview}
+        />
+      )}
+
+      {tab === 'earnings' && <EarningsPanel />}
     </DashboardShell>
   );
 }

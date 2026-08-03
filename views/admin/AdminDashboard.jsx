@@ -10,6 +10,7 @@ import AdminStaffHR from '@/components/admin/AdminStaffHR';
 import AdminSalesPanel from '@/components/admin/AdminSalesPanel';
 import AdminGuidancePanel from '@/components/admin/AdminGuidancePanel';
 import SharedApplicationsBoard from '@/components/SharedApplicationsBoard';
+import PayoutsAdminPanel from '@/components/consultant/PayoutsAdminPanel';
 
 const NAV_GROUPS = [
   {
@@ -31,6 +32,7 @@ const NAV_GROUPS = [
     items: [
       { id: 'mentorship', label: 'Guidance', icon: 'guidance' },
       { id: 'sales', label: 'Sales & Payments', icon: 'sales' },
+      { id: 'payouts', label: 'Consultant Payouts', icon: 'sales' },
     ],
   },
   {
@@ -48,6 +50,7 @@ const TAB_META = {
   applications: { title: 'Applications List', subtitle: 'Review submissions and update status' },
   mentorship: { title: 'Guidance', subtitle: 'Requests, match dossiers, and follow-ups' },
   sales: { title: 'Sales & Payments', subtitle: 'Plans, orders, and monetization' },
+  payouts: { title: 'Consultant Payouts', subtitle: 'Approve and mark consultant payout requests as paid' },
   hr: { title: 'HR Management', subtitle: 'Managers and admissions consultants' },
 };
 
@@ -200,6 +203,7 @@ export default function AdminDashboard() {
         <AdminGuidancePanel requests={mentorship} loading={loading} onRefresh={fetchData} />
       )}
       {tab === 'sales' && <AdminSalesPanel />}
+      {tab === 'payouts' && <PayoutsAdminPanel />}
       {tab === 'hr' && (
         <div>
           <p className="mb-4 text-sm text-slate-600">Add, edit, and remove Managers and Admissions Consultants.</p>

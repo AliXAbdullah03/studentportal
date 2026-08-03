@@ -8,10 +8,11 @@ import ProfileGapsPanel from '@/components/ProfileGapsPanel';
 
 export default function ScholarshipDetail({ initialScholarship }) {
   const { id } = useParams();
-  const { isAuth } = useAuth();
+  const { isAuth, isStudent } = useAuth();
   const [scholarship, setScholarship] = useState(initialScholarship || null);
   const [loading, setLoading] = useState(!initialScholarship);
   const [error, setError] = useState('');
+  const [existingAppId, setExistingAppId] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -20,6 +21,19 @@ export default function ScholarshipDetail({ initialScholarship }) {
       .catch(() => setError('Scholarship not found'))
       .finally(() => setLoading(false));
   }, [id, isAuth]);
+
+  useEffect(() => {
+    if (!isStudent || !id) {
+      setExistingAppId(null);
+      return;
+    }
+    api.applications.mine()
+      .then((apps) => {
+        const hit = (apps || []).find((a) => String(a.scholarship_id) === String(id));
+        setExistingAppId(hit?.id || null);
+      })
+      .catch(() => setExistingAppId(null));
+  }, [isStudent, id]);
 
   if (loading && !scholarship) {
     return (
@@ -131,10 +145,24 @@ export default function ScholarshipDetail({ initialScholarship }) {
         {isAuth && (
           <div className="mt-10 flex flex-wrap gap-4 rounded-lg border border-brand-200 bg-brand-50 p-6">
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900">Ready to apply?</h3>
-              <p className="mt-1 text-sm text-gray-600">Submit your application through our platform.</p>
+              <h3 className="font-semibold text-gray-900">
+                {existingAppId ? 'You are tracking this scholarship' : 'Ready to submit details?'}
+              </h3>
+              <p className="mt-1 text-sm text-gray-600">
+                {existingAppId
+                  ? 'Follow status, notes, and documents in your application tracker.'
+                  : 'Share your details — Scholaris applies on your behalf and you track progress live.'}
+              </p>
             </div>
-            <Link to={`/scholarships/${scholarship.id}/apply`} className="btn-primary">Apply Now</Link>
+            {existingAppId ? (
+              <Link to={`/dashboard/applications/${existingAppId}`} className="btn-primary">
+                Track application
+              </Link>
+            ) : (
+              <Link to={`/scholarships/${scholarship.id}/apply`} className="btn-primary">
+                Submit details
+              </Link>
+            )}
           </div>
         )}
 

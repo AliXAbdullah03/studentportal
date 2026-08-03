@@ -5,7 +5,7 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import AuthModal from './AuthModal';
 
-const BARE_LAYOUT_PREFIXES = ['/admin', '/dashboard', '/manager', '/consultant', '/login', '/register'];
+const BARE_LAYOUT_PREFIXES = ['/admin', '/dashboard', '/manager', '/consultant', '/login', '/register', '/onboarding'];
 
 export default function AppLayout({ children }) {
   const pathname = usePathname();

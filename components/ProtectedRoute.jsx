@@ -1,11 +1,13 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { Navigate } from '@/lib/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { getDashboardPath } from '@/lib/api';
+import { getDashboardPath, getPostAuthPath } from '@/lib/api';
 
 export default function ProtectedRoute({ children, roles }) {
   const { isAuth, loading, user } = useAuth();
+  const pathname = usePathname();
 
   if (loading) {
     return (
@@ -19,6 +21,24 @@ export default function ProtectedRoute({ children, roles }) {
 
   if (roles && !roles.includes(user.role)) {
     return <Navigate to={getDashboardPath(user.role)} replace />;
+  }
+
+  // Force incomplete student profiles through onboarding (except on the wizard itself)
+  if (
+    user.role === 'student'
+    && user.onboarding_completed === false
+    && pathname !== '/onboarding'
+    && !pathname.startsWith('/onboarding/')
+  ) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  if (
+    user.role === 'student'
+    && user.onboarding_completed
+    && pathname === '/onboarding'
+  ) {
+    return <Navigate to={getPostAuthPath(user)} replace />;
   }
 
   return children;

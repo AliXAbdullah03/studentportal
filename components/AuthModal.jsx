@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getDashboardPath } from '@/lib/api';
+import { getPostAuthPath } from '@/lib/api';
 import { useNavigate } from '@/lib/navigation';
 
 const EXPLORE_SLIDES = [
@@ -90,7 +90,7 @@ export default function AuthModal() {
     setError('');
     try {
       const user = await login(loginForm.email, loginForm.password);
-      navigate(getDashboardPath(user.role));
+      navigate(getPostAuthPath(user));
     } catch (err) {
       setError(err.message || 'Login failed');
     } finally {
@@ -107,12 +107,12 @@ export default function AuthModal() {
     setSubmitting(true);
     setError('');
     try {
-      await register({
+      const user = await register({
         name: registerForm.name,
         email: registerForm.email,
         password: registerForm.password,
       });
-      navigate('/dashboard');
+      navigate(getPostAuthPath(user));
     } catch (err) {
       setError(err.message || 'Registration failed');
     } finally {
@@ -141,13 +141,13 @@ export default function AuthModal() {
         </button>
 
         {/* Left panel */}
-        <div className="hidden w-[42%] flex-col justify-between bg-gradient-to-b from-[#0d7377] to-[#14505c] p-8 text-white sm:flex">
+        <div className="hidden w-[42%] flex-col justify-between bg-gradient-to-b from-[#226f7a] to-[#1f5a63] p-8 text-white sm:flex">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">{current.title}</h2>
             <div className="mt-8 flex flex-col items-center">
               <div className="relative flex h-36 w-36 items-center justify-center">
                 <div className="absolute inset-0 rounded-full bg-white/10" />
-                <div className="absolute -right-2 top-2 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold text-[#0d7377] shadow">
+                <div className="absolute -right-2 top-2 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold text-[#226f7a] shadow">
                   {current.caption}
                 </div>
                 <svg className="relative h-20 w-20 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -182,15 +182,15 @@ export default function AuthModal() {
         {/* Right panel */}
         <div className="flex flex-1 flex-col px-6 py-8 sm:px-10">
           <div className="mb-5 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded bg-[#1a3a5c] text-xs font-bold text-white">
+            <div className="flex h-8 w-8 items-center justify-center rounded bg-[#0b3d42] text-xs font-bold text-white">
               SC
             </div>
-            <span className="text-sm font-semibold text-[#1a3a5c]">Scholaris</span>
+            <span className="text-sm font-semibold text-[#0b3d42]">Scholaris</span>
           </div>
 
           {authModalMode === 'choice' && (
             <>
-              <h3 className="text-xl font-bold leading-snug text-[#1a3a5c] sm:text-2xl">
+              <h3 className="text-xl font-bold leading-snug text-[#0b3d42] sm:text-2xl">
                 Join students who use Scholaris to find funded programs and guided applications
               </h3>
               <p className="mt-2 text-sm text-gray-500">Get free access to our scholarship catalog!</p>
@@ -211,30 +211,6 @@ export default function AuthModal() {
                   </svg>
                   Continue with Google
                 </button>
-
-                <button
-                  type="button"
-                  disabled
-                  aria-disabled="true"
-                  title="Coming soon"
-                  className="pointer-events-none flex w-full cursor-not-allowed items-center justify-center gap-2 rounded bg-[#1877F2] px-4 py-2.5 text-sm font-semibold text-white opacity-45"
-                >
-                  <span className="text-lg font-bold leading-none">f</span>
-                  Continue with Facebook
-                </button>
-
-                <button
-                  type="button"
-                  disabled
-                  aria-disabled="true"
-                  title="Coming soon"
-                  className="pointer-events-none flex w-full cursor-not-allowed items-center justify-center gap-2 rounded bg-[#0A66C2] px-4 py-2.5 text-sm font-semibold text-white opacity-45"
-                >
-                  <span className="text-sm font-bold">in</span>
-                  Continue with LinkedIn
-                </button>
-
-                <p className="text-center text-[11px] text-gray-400">Social sign-in coming soon</p>
 
                 <div className="relative py-1">
                   <div className="absolute inset-0 flex items-center">
@@ -259,7 +235,7 @@ export default function AuthModal() {
                 <button
                   type="button"
                   onClick={() => setAuthModalMode('login')}
-                  className="flex w-full items-center justify-center gap-2 rounded bg-[#1a3a5c] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#14304d]"
+                  className="flex w-full items-center justify-center gap-2 rounded bg-[#0b3d42] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#06262a]"
                 >
                   Log in with email
                 </button>
@@ -270,7 +246,7 @@ export default function AuthModal() {
                 <button
                   type="button"
                   onClick={() => setAuthModalMode('login')}
-                  className="font-semibold text-[#0d7377] hover:underline"
+                  className="font-semibold text-[#226f7a] hover:underline"
                 >
                   Log in
                 </button>
@@ -280,7 +256,7 @@ export default function AuthModal() {
 
           {authModalMode === 'login' && (
             <>
-              <h3 className="text-xl font-bold text-[#1a3a5c]">Welcome back</h3>
+              <h3 className="text-xl font-bold text-[#0b3d42]">Welcome back</h3>
               <p className="mt-1 text-sm text-gray-500">Sign in to your account</p>
 
               <form onSubmit={handleLogin} className="mt-5 space-y-4">
@@ -316,7 +292,7 @@ export default function AuthModal() {
 
               <p className="mt-4 text-center text-sm text-gray-600">
                 New here?{' '}
-                <button type="button" onClick={() => setAuthModalMode('register')} className="font-semibold text-[#0d7377] hover:underline">
+                <button type="button" onClick={() => setAuthModalMode('register')} className="font-semibold text-[#226f7a] hover:underline">
                   Create account
                 </button>
                 {' · '}
@@ -329,7 +305,7 @@ export default function AuthModal() {
 
           {authModalMode === 'register' && (
             <>
-              <h3 className="text-xl font-bold text-[#1a3a5c]">Create your free account</h3>
+              <h3 className="text-xl font-bold text-[#0b3d42]">Create your free account</h3>
               <p className="mt-1 text-sm text-gray-500">Unlock full scholarship details and guidance</p>
 
               <form onSubmit={handleRegister} className="mt-5 space-y-3">
@@ -391,7 +367,7 @@ export default function AuthModal() {
 
               <p className="mt-4 text-center text-sm text-gray-600">
                 Already have an account?{' '}
-                <button type="button" onClick={() => setAuthModalMode('login')} className="font-semibold text-[#0d7377] hover:underline">
+                <button type="button" onClick={() => setAuthModalMode('login')} className="font-semibold text-[#226f7a] hover:underline">
                   Log in
                 </button>
                 {' · '}
@@ -404,7 +380,7 @@ export default function AuthModal() {
 
           <p className="mt-auto pt-6 text-center text-[11px] leading-relaxed text-gray-400">
             By registering, you agree to our{' '}
-            <a href="/policies" className="font-semibold text-[#1a3a5c] underline">Policies &amp; Guidelines</a>.
+            <a href="/policies" className="font-semibold text-[#0b3d42] underline">Policies &amp; Guidelines</a>.
           </p>
         </div>
       </div>

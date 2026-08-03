@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from '@/lib/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { getPostAuthPath } from '@/lib/api';
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -10,19 +11,19 @@ export default function Register() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { register, openAuthModal, isAuth, loading: authLoading } = useAuth();
+  const { register, openAuthModal, isAuth, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (authLoading) return;
-    if (isAuth) {
-      navigate('/dashboard', { replace: true });
+    if (isAuth && user) {
+      navigate(getPostAuthPath(user), { replace: true });
       return;
     }
     try { sessionStorage.setItem('auth_modal_seen', '1'); } catch { /* ignore */ }
     openAuthModal('register');
     navigate('/', { replace: true });
-  }, [authLoading, isAuth, navigate, openAuthModal]);
+  }, [authLoading, isAuth, user, navigate, openAuthModal]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -37,14 +38,14 @@ export default function Register() {
     setLoading(true);
     setError('');
     try {
-      await register({
+      const created = await register({
         name: form.name,
         email: form.email,
         password: form.password,
         phone: form.phone || undefined,
         nationality: form.nationality || undefined,
       });
-      navigate('/dashboard');
+      navigate(getPostAuthPath(created));
     } catch (err) {
       setError(err.message);
     } finally {

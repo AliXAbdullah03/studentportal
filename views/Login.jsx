@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from '@/lib/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { getDashboardPath } from '@/lib/api';
+import { getPostAuthPath } from '@/lib/api';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -16,7 +16,7 @@ export default function Login() {
   useEffect(() => {
     if (authLoading) return;
     if (isAuth && user) {
-      navigate(getDashboardPath(user.role), { replace: true });
+      navigate(getPostAuthPath(user), { replace: true });
       return;
     }
     try { sessionStorage.setItem('auth_modal_seen', '1'); } catch { /* ignore */ }
@@ -30,7 +30,7 @@ export default function Login() {
     setError('');
     try {
       const loggedIn = await login(email, password);
-      navigate(getDashboardPath(loggedIn.role));
+      navigate(getPostAuthPath(loggedIn));
     } catch (err) {
       setError(err.message);
     } finally {

@@ -8,6 +8,9 @@ const EMPTY = {
   title: '', university: '', country: '', field_of_study: '', degree_level: '',
   amount: '', deadline: '', description: '', eligibility: '', benefits: '',
   application_url: '', featured: false, status: 'active',
+  funding_type: 'full',
+  min_gpa: '', min_ielts: '', min_toefl: '', min_duolingo: '', min_gre: '',
+  requires_gre: false, requires_research_proposal: false,
 };
 
 const FIELDS = [
@@ -122,6 +125,52 @@ export default function AdminScholarshipForm() {
               <label htmlFor="deadline" className="label-field">Application Deadline</label>
               <input id="deadline" name="deadline" type="date" value={form.deadline} onChange={handleChange} className="input-field" />
             </div>
+          </div>
+        </div>
+
+        <div className="card space-y-5 p-6">
+          <h2 className="font-semibold text-gray-900">Entry requirements</h2>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <label htmlFor="funding_type" className="label-field">Funding type</label>
+              <select id="funding_type" name="funding_type" value={form.funding_type || 'unknown'} onChange={handleChange} className="input-field">
+                <option value="full">Full</option>
+                <option value="partial">Partial</option>
+                <option value="tuition_only">Tuition only</option>
+                <option value="stipend">Stipend</option>
+                <option value="unknown">Unknown</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="min_gpa" className="label-field">Min GPA</label>
+              <input id="min_gpa" name="min_gpa" type="number" step="0.1" value={form.min_gpa ?? ''} onChange={handleChange} className="input-field" />
+            </div>
+            <div>
+              <label htmlFor="min_ielts" className="label-field">Min IELTS</label>
+              <input id="min_ielts" name="min_ielts" type="number" step="0.5" value={form.min_ielts ?? ''} onChange={handleChange} className="input-field" />
+            </div>
+            <div>
+              <label htmlFor="min_toefl" className="label-field">Min TOEFL</label>
+              <input id="min_toefl" name="min_toefl" type="number" value={form.min_toefl ?? ''} onChange={handleChange} className="input-field" />
+            </div>
+            <div>
+              <label htmlFor="min_duolingo" className="label-field">Min Duolingo</label>
+              <input id="min_duolingo" name="min_duolingo" type="number" value={form.min_duolingo ?? ''} onChange={handleChange} className="input-field" />
+            </div>
+            <div>
+              <label htmlFor="min_gre" className="label-field">Min GRE</label>
+              <input id="min_gre" name="min_gre" type="number" value={form.min_gre ?? ''} onChange={handleChange} className="input-field" />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-5">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="requires_gre" checked={!!form.requires_gre} onChange={handleChange} />
+              GRE required
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="requires_research_proposal" checked={!!form.requires_research_proposal} onChange={handleChange} />
+              Research proposal required
+            </label>
           </div>
         </div>
 

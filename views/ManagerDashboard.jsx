@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import DashboardShell from '@/components/DashboardShell';
 import SharedApplicationsBoard from '@/components/SharedApplicationsBoard';
+import PayoutsAdminPanel from '@/components/consultant/PayoutsAdminPanel';
 
 function ProgressBar({ value }) {
   return (
@@ -23,6 +24,7 @@ const NAV_GROUPS = [
       { id: 'traffic', label: 'Traffic Control', icon: 'traffic' },
       { id: 'capacity', label: 'Consultant Capacity', icon: 'clients' },
       { id: 'active', label: 'Active Progress', icon: 'progress' },
+      { id: 'payouts', label: 'Consultant Payouts', icon: 'sales' },
     ],
   },
 ];
@@ -32,6 +34,7 @@ const TAB_META = {
   traffic: { title: 'Traffic Control', subtitle: 'Assign forwarded clients to consultants' },
   capacity: { title: 'Consultant Capacity', subtitle: 'Workload and availability overview' },
   active: { title: 'Active Progress', subtitle: 'Monitor fulfillment milestones' },
+  payouts: { title: 'Consultant Payouts', subtitle: 'Approve and mark consultant payout requests as paid' },
 };
 
 export default function ManagerDashboard() {
@@ -229,6 +232,8 @@ export default function ManagerDashboard() {
           )}
         </div>
       )}
+
+      {tab === 'payouts' && <PayoutsAdminPanel />}
     </DashboardShell>
   );
 }

@@ -101,6 +101,12 @@ function ApplicationProgressTrack({ application }) {
             );
           })}
         </ol>
+        <Link
+          to={`/dashboard/applications/${application.id}`}
+          className="mt-2 inline-flex text-sm font-semibold text-brand-600 hover:text-brand-700"
+        >
+          Open full tracker →
+        </Link>
       </div>
     </div>
   );
@@ -111,18 +117,22 @@ const NAV_GROUPS = [
     title: 'My account',
     items: [
       { id: 'overview', label: 'Overview', icon: 'home' },
+      { id: 'matches', label: 'My Matches', icon: 'search' },
       { id: 'progress', label: 'Scholarship Progress', icon: 'progress' },
       { id: 'purchases', label: 'My Purchases', icon: 'plans' },
       { id: 'browse', label: 'Browse Scholarships', icon: 'search' },
+      { id: 'profile', label: 'Edit Profile', icon: 'hr' },
     ],
   },
 ];
 
 const TAB_META = {
   overview: { title: 'Overview', subtitle: 'Your applications, plans, and account at a glance' },
+  matches: { title: 'Recommended for you', subtitle: 'Personalized matches from your profile, tests, and preferences' },
   progress: { title: 'Scholarship Progress', subtitle: 'Track each scholarship we are handling for you' },
   purchases: { title: 'My Purchases', subtitle: 'Mentorship plans and payment status' },
   browse: { title: 'Browse Scholarships', subtitle: 'Find more opportunities in the catalog' },
+  profile: { title: 'Profile', subtitle: 'Update onboarding details anytime' },
 };
 
 export default function StudentDashboard() {
@@ -130,19 +140,31 @@ export default function StudentDashboard() {
   const navigate = useNavigate();
   const [tab, setTab] = useState('overview');
   const [applications, setApplications] = useState([]);
+  const [statusFilter, setStatusFilter] = useState('all');
   const [orders, setOrders] = useState([]);
   const [planStatus, setPlanStatus] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const filteredApps = statusFilter === 'all'
+    ? applications
+    : applications.filter((a) => a.status === statusFilter);
 
   useEffect(() => {
     let cancelled = false;
     const load = () => {
-      Promise.all([api.applications.mine(), api.orders.mine(), api.crm.myStatus()])
-        .then(([a, o, status]) => {
+      Promise.all([
+        api.applications.mine(),
+        api.orders.mine(),
+        api.crm.myStatus(),
+        api.profile.recommendations(8).catch(() => ({ recommendations: [] })),
+      ])
+        .then(([a, o, status, rec]) => {
           if (cancelled) return;
           setApplications(a);
           setOrders(o);
           setPlanStatus(status);
+          setRecommendations(rec.recommendations || []);
         })
         .catch(console.error)
         .finally(() => {
@@ -172,9 +194,14 @@ export default function StudentDashboard() {
           navigate('/scholarships');
           return;
         }
+        if (id === 'profile') {
+          navigate('/onboarding');
+          return;
+        }
         setTab(id);
       }}
       counts={{
+        matches: recommendations.length,
         progress: applications.length,
         purchases: orders.length,
       }}
@@ -224,8 +251,66 @@ export default function StudentDashboard() {
             </div>
           )}
 
+          {recommendations.length > 0 && (
+            <div className="mb-8">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h3 className="font-semibold text-slate-900">Top matches for your profile</h3>
+                <button type="button" onClick={() => setTab('matches')} className="text-sm font-semibold text-brand-600">
+                  See all →
+                </button>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {recommendations.slice(0, 4).map((r) => (
+                  <Link key={r.id} to={`/scholarships/${r.id}`} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand-300">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-slate-900 line-clamp-2">{r.title}</p>
+                        <p className="mt-1 text-sm text-brand-600">{r.university}</p>
+                        <p className="mt-1 text-xs text-slate-500">{r.country} · {r.degree_level}</p>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700">
+                        {r.match_percentage}%
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {applications.length > 0 && (
+            <div className="mb-8">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h3 className="font-semibold text-slate-900">Recent applications</h3>
+                <button type="button" onClick={() => setTab('progress')} className="text-sm font-semibold text-brand-600">
+                  Track all →
+                </button>
+              </div>
+              <div className="space-y-2">
+                {applications.slice(0, 3).map((a) => (
+                  <Link
+                    key={a.id}
+                    to={`/dashboard/applications/${a.id}`}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:border-brand-300"
+                  >
+                    <div>
+                      <p className="font-medium text-slate-900">{a.scholarship_title}</p>
+                      <p className="text-xs text-slate-500">{a.university}</p>
+                    </div>
+                    <span className="text-xs font-semibold capitalize text-brand-700">
+                      {a.status === 'in_progress' ? 'Applying for you' : a.status}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={() => setTab('progress')} className="btn-primary text-sm">
+            <button type="button" onClick={() => setTab('matches')} className="btn-primary text-sm">
+              View my matches
+            </button>
+            <button type="button" onClick={() => setTab('progress')} className="btn-secondary text-sm">
               View scholarship progress
             </button>
             <button type="button" onClick={() => setTab('purchases')} className="btn-secondary text-sm">
@@ -235,11 +320,77 @@ export default function StudentDashboard() {
         </div>
       )}
 
+      {tab === 'matches' && (
+        <div>
+          <p className="mb-4 text-sm text-slate-500">
+            Ranked using your GPA, English scores, field, research background, and preferred countries.
+          </p>
+          {loading ? (
+            <p className="text-slate-500">Loading recommendations...</p>
+          ) : recommendations.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
+              <p className="text-slate-600">Complete or update your profile to unlock personalized matches.</p>
+              <Link to="/onboarding" className="btn-primary mt-4 inline-flex">Update profile</Link>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recommendations.map((r) => (
+                <Link
+                  key={r.id}
+                  to={`/scholarships/${r.id}`}
+                  className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-brand-300"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-slate-900">{r.title}</p>
+                    <p className="mt-1 text-sm text-brand-600">{r.university}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {r.country} · {r.field_of_study} · {r.degree_level}
+                    </p>
+                    {r.gaps?.length > 0 && (
+                      <p className="mt-2 text-xs text-amber-700">Gap tip: {r.gaps[0]}</p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-brand-700">{r.match_percentage}%</p>
+                    <p className="text-xs text-slate-500">match</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {tab === 'progress' && (
         <div>
           <p className="mb-4 text-sm text-slate-500">
             Track each scholarship where you submitted details — we apply on your behalf and update this live.
           </p>
+          {applications.length > 0 && (
+            <div className="mb-4 flex flex-wrap gap-2">
+              {[
+                { key: 'all', label: 'All' },
+                { key: 'pending', label: 'Submitted' },
+                { key: 'reviewed', label: 'Under review' },
+                { key: 'in_progress', label: 'Applying' },
+                { key: 'accepted', label: 'Accepted' },
+                { key: 'rejected', label: 'Not selected' },
+              ].map((f) => (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={() => setStatusFilter(f.key)}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    statusFilter === f.key
+                      ? 'bg-brand-600 text-white'
+                      : 'bg-white text-slate-600 ring-1 ring-slate-200'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
           {loading ? (
             <p className="text-slate-500">Loading...</p>
           ) : applications.length === 0 ? (
@@ -247,9 +398,13 @@ export default function StudentDashboard() {
               <p className="text-slate-600">You haven&apos;t submitted details for any scholarships yet.</p>
               <Link to="/scholarships" className="btn-primary mt-4 inline-flex">Find Scholarships</Link>
             </div>
+          ) : filteredApps.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-600">
+              No applications in this status.
+            </div>
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
-              {applications.map((a) => (
+              {filteredApps.map((a) => (
                 <ApplicationProgressTrack key={a.id} application={a} />
               ))}
             </div>

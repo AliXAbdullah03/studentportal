@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from '@/lib/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -86,9 +87,13 @@ function Card({ card, draggingId, onDragStart, onStatusPick, busy }) {
         )}
       </div>
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 pt-2">
-        <span className="text-[10px] text-gray-400">
-          {card.created_at ? new Date(card.created_at).toLocaleDateString() : ''}
-        </span>
+        <Link
+          to={`/dashboard/applications/${card.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="text-[10px] font-semibold text-violet-700 hover:underline"
+        >
+          Open tracker
+        </Link>
         <select
           value={card.status}
           disabled={busy}
@@ -282,7 +287,7 @@ export default function SharedApplicationsBoard({ title = 'Applications Board', 
     setAppError('');
     try {
       await api.applications.submit({
-        scholarship_id: parseInt(appForm.scholarship_id, 10),
+        scholarship_id: appForm.scholarship_id,
         full_name: appForm.full_name.trim(),
         email: appForm.email.trim(),
         phone: appForm.phone.trim() || undefined,

@@ -9,21 +9,31 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState('choice'); // choice | login | register
+  const [authModalMode, setAuthModalMode] = useState('choice');
+
+  const refreshUser = useCallback(async () => {
+    if (!isAuthenticated()) {
+      setUser(null);
+      return null;
+    }
+    try {
+      const me = await api.auth.me();
+      setUser(me);
+      return me;
+    } catch {
+      setAuthToken(null);
+      setUser(null);
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated()) {
-      api.auth.me()
-        .then(setUser)
-        .catch(() => {
-          setAuthToken(null);
-          setUser(null);
-        })
-        .finally(() => setLoading(false));
+      refreshUser().finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [refreshUser]);
 
   const openAuthModal = useCallback((mode = 'choice') => {
     setAuthModalMode(mode);
@@ -63,6 +73,7 @@ export function AuthProvider({ children }) {
       login,
       register,
       logout,
+      refreshUser,
       isAuth: !!user,
       isAdmin: user?.role === 'admin',
       isManager: user?.role === 'manager',
